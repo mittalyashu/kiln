@@ -6,7 +6,7 @@ mod env;
 mod error;
 mod git;
 mod notify;
-mod params;
+pub mod params;
 mod runner;
 mod scheduler;
 mod scripts;
