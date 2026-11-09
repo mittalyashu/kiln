@@ -188,6 +188,18 @@ pub fn parse(source: &str, path: Option<&Path>) -> ScriptHeader {
     header
 }
 
+/// Returns the interpreter name from the script's shebang line, if it has one.
+///
+/// `#!/usr/bin/env bash`, `#!/bin/zsh -f`, and `#!/usr/bin/env -S deno run` all
+/// resolve to the program name (`bash`, `zsh`, `deno`). The runner uses this to
+/// choose an interpreter, and the injection layer uses it to decide whether
+/// `@inject preamble` is supported.
+pub fn shebang_interpreter(source: &str) -> Option<&str> {
+    let source = source.strip_prefix('\u{feff}').unwrap_or(source);
+
+    Some(interpreter_name(source.lines().next()?.strip_prefix("#!")?))
+}
+
 /// Detects the comment style from the shebang, then from the file extension,
 /// defaulting to `#` when neither is conclusive.
 pub fn detect_comment_style(source: &str, path: Option<&Path>) -> CommentStyle {
@@ -1043,6 +1055,26 @@ console.log("hi");
             parse("#! /bin/bash\n", Some(Path::new("scripts/deploy.js"))).comment_style,
             CommentStyle::Hash
         );
+    }
+
+    #[test]
+    fn reads_the_interpreter_from_the_shebang() {
+        assert_eq!(shebang_interpreter("#!/usr/bin/env bash\n"), Some("bash"));
+        assert_eq!(shebang_interpreter("#!/bin/zsh -f\n"), Some("zsh"));
+        assert_eq!(
+            shebang_interpreter("#!/usr/bin/env -S deno run --allow-net\n"),
+            Some("deno")
+        );
+        assert_eq!(
+            shebang_interpreter("#!/usr/bin/env -S bash -eu\n"),
+            Some("bash")
+        );
+        assert_eq!(
+            shebang_interpreter("\u{feff}#!/usr/bin/env python3\n"),
+            Some("python3")
+        );
+        assert_eq!(shebang_interpreter("# @name No shebang\n"), None);
+        assert_eq!(shebang_interpreter(""), None);
     }
 
     #[test]
