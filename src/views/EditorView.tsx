@@ -10,6 +10,7 @@ function EditorView() {
         "Syntax highlighting follows the script's shebang or extension",
         "External editors are watched for changes",
         "Parameter values never modify the saved script",
+        "Scripts using @inject preamble report error lines shifted by the generated preamble",
       ]}
     />
   );

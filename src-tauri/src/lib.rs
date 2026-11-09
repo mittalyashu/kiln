@@ -5,6 +5,7 @@ mod db;
 mod env;
 mod error;
 mod git;
+pub mod injection;
 mod notify;
 pub mod params;
 mod runner;
