@@ -3,10 +3,13 @@
 //! Commands handle actions and return values; events push live state to the
 //! frontend. Run logic lives in Rust, never in React.
 
+use std::path::Path;
+
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::error::AppError;
+use crate::repos::{self, Repo};
 use crate::settings::{self, Settings};
 use crate::{AppState, db::Db};
 
@@ -62,4 +65,34 @@ pub fn save_settings(
 #[tauri::command]
 pub fn get_default_settings() -> Settings {
     Settings::default()
+}
+
+/// Initializes a git repository in an empty folder, records it locally, and
+/// makes it the active script library.
+#[tauri::command(async)]
+pub fn create_repository(
+    state: State<'_, AppState>,
+    folder: String,
+    name: Option<String>,
+    remote: Option<String>,
+) -> Result<Repo, AppError> {
+    let conn = state.db.connect()?;
+    repos::create(
+        &conn,
+        Path::new(&folder),
+        name.as_deref(),
+        remote.as_deref(),
+    )
+}
+
+#[tauri::command(async)]
+pub fn get_active_repository(state: State<'_, AppState>) -> Result<Option<Repo>, AppError> {
+    let conn = state.db.connect()?;
+    repos::active(&conn)
+}
+
+#[tauri::command(async)]
+pub fn list_repositories(state: State<'_, AppState>) -> Result<Vec<Repo>, AppError> {
+    let conn = state.db.connect()?;
+    repos::list(&conn)
 }
