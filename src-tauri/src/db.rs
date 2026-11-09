@@ -25,9 +25,10 @@ struct Migration {
 
 /// Versioned, app-owned migrations. Add new entries here; never edit an entry
 /// that has already shipped, because existing databases will not re-run it.
-const MIGRATIONS: &[Migration] = &[Migration {
-    version: 1,
-    sql: r#"
+const MIGRATIONS: &[Migration] = &[
+    Migration {
+        version: 1,
+        sql: r#"
         CREATE TABLE repos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             path TEXT NOT NULL UNIQUE,
@@ -53,7 +54,20 @@ const MIGRATIONS: &[Migration] = &[Migration {
             updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
         );
     "#,
-}];
+    },
+    Migration {
+        version: 2,
+        sql: r#"
+        -- Repo records gained an optional remote and a single active row so the
+        -- app can reopen the last selected script library after a restart.
+        ALTER TABLE repos ADD COLUMN remote TEXT;
+        ALTER TABLE repos ADD COLUMN is_active INTEGER NOT NULL DEFAULT 0;
+
+        CREATE UNIQUE INDEX repos_single_active ON repos(is_active)
+        WHERE is_active = 1;
+    "#,
+    },
+];
 
 /// Handle to the database file. Connections are opened per operation, which
 /// keeps callers from sharing a single connection across Tauri command threads.
@@ -190,12 +204,12 @@ mod tests {
         let dir = TestDir::new();
         let db = Db::open(&dir.0).expect("first open");
 
-        assert_eq!(db.schema_version().expect("schema version"), 1);
+        assert_eq!(db.schema_version().expect("schema version"), 2);
 
         // Opening the same database again must not re-run the migration.
         drop(db);
         let db = Db::open(&dir.0).expect("second open");
-        assert_eq!(db.schema_version().expect("schema version"), 1);
+        assert_eq!(db.schema_version().expect("schema version"), 2);
     }
 
     #[test]

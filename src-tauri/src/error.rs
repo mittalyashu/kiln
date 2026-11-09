@@ -13,6 +13,12 @@ pub enum AppError {
     #[error("invalid settings: {0}")]
     InvalidSettings(String),
 
+    #[error("{0}")]
+    InvalidRepository(String),
+
+    #[error("git error: {0}")]
+    Git(String),
+
     #[error("serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 

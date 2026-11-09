@@ -8,6 +8,7 @@ mod git;
 pub mod injection;
 mod notify;
 pub mod params;
+mod repos;
 mod runner;
 mod scheduler;
 mod scripts;
@@ -35,6 +36,9 @@ pub fn run() {
             commands::get_settings,
             commands::save_settings,
             commands::get_default_settings,
+            commands::create_repository,
+            commands::get_active_repository,
+            commands::list_repositories,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

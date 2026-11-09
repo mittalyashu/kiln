@@ -13,6 +13,14 @@ export interface AppInfo {
   schemaVersion: number;
 }
 
+export interface Repo {
+  id: number;
+  name: string;
+  path: string;
+  remote: string | null;
+  isActive: boolean;
+}
+
 export interface Settings {
   autoCommitEnabled: boolean;
   autoCommitDebounceSeconds: number;
@@ -41,6 +49,26 @@ export function saveSettings(settings: Settings): Promise<Settings> {
 
 export function getDefaultSettings(): Promise<Settings> {
   return invoke<Settings>("get_default_settings");
+}
+
+export function createRepository(
+  folder: string,
+  name?: string | null,
+  remote?: string | null,
+): Promise<Repo> {
+  return invoke<Repo>("create_repository", {
+    folder,
+    name: name ?? null,
+    remote: remote ?? null,
+  });
+}
+
+export function getActiveRepository(): Promise<Repo | null> {
+  return invoke<Repo | null>("get_active_repository");
+}
+
+export function listRepositories(): Promise<Repo[]> {
+  return invoke<Repo[]>("list_repositories");
 }
 
 export function onSettingsUpdated(
